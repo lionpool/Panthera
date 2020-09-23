@@ -31,6 +31,7 @@ cmake_minimum_required(VERSION 2.8.7)
 project(RandomX)
 
 set(randomx_sources
+src/yespower_k12.c
 src/aes_hash.cpp
 src/argon2_ref.c
 src/argon2_ssse3.c
@@ -54,7 +55,12 @@ src/instructions_portable.cpp
 src/reciprocal.c
 src/virtual_machine.cpp
 src/vm_compiled_light.cpp
-src/blake2/blake2b.c)
+src/blake2/blake2b.c
+src/yespower/sha256.c
+src/k12/KangarooTwelve.c
+src/k12/KeccakP-1600-reference.c
+src/k12/KeccakSpongeWidth1600.c
+src/yespower/yespower-opt.c)
 
 if(NOT ARCH_ID)
   # allow cross compiling

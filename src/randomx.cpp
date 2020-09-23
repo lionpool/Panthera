@@ -37,6 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cassert>
 #include <limits>
 #include <cfenv>
+#include "yespower_k12.h"
 
 extern "C" {
 
@@ -354,6 +355,8 @@ extern "C" {
 		fegetenv(&fpstate);
 		alignas(16) uint64_t tempHash[8];
 		int blakeResult = blake2b(tempHash, sizeof(tempHash), input, inputSize, nullptr, 0);
+		yespower_hash(tempHash, sizeof(tempHash), tempHash);
+		k12(tempHash, sizeof(tempHash), tempHash);
 		assert(blakeResult == 0);
 		machine->initScratchpad(&tempHash);
 		machine->resetRoundingMode();
@@ -369,6 +372,8 @@ extern "C" {
 
 	void randomx_calculate_hash_first(randomx_vm* machine, const void* input, size_t inputSize) {
 		blake2b(machine->tempHash, sizeof(machine->tempHash), input, inputSize, nullptr, 0);
+		yespower_hash(machine->tempHash, sizeof(machine->tempHash), machine->tempHash);
+		k12(machine->tempHash, sizeof(machine->tempHash), machine->tempHash);
 		machine->initScratchpad(machine->tempHash);
 	}
 
@@ -382,16 +387,9 @@ extern "C" {
 
 		// Finish current hash and fill the scratchpad for the next hash at the same time
 		blake2b(machine->tempHash, sizeof(machine->tempHash), nextInput, nextInputSize, nullptr, 0);
+		yespower_hash(machine->tempHash, sizeof(machine->tempHash), machine->tempHash);
+		k12(machine->tempHash, sizeof(machine->tempHash), machine->tempHash);
 		machine->hashAndFill(output, RANDOMX_HASH_SIZE, machine->tempHash);
 	}
 
-	void randomx_calculate_hash_last(randomx_vm* machine, void* output) {
-		machine->resetRoundingMode();
-		for (int chain = 0; chain < RANDOMX_PROGRAM_COUNT - 1; ++chain) {
-			machine->run(machine->tempHash);
-			blake2b(machine->tempHash, sizeof(machine->tempHash), machine->getRegisterFile(), sizeof(randomx::RegisterFile), nullptr, 0);
-		}
-		machine->run(machine->tempHash);
-		machine->getFinalResult(output, RANDOMX_HASH_SIZE);
-	}
 }
