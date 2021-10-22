@@ -228,6 +228,8 @@ RANDOMX_EXPORT void randomx_vm_set_dataset(randomx_vm *machine, randomx_dataset 
 */
 RANDOMX_EXPORT void randomx_destroy_vm(randomx_vm *machine);
 
+/* The only difference between randomx and randomx_b is the use of blake3 instead of YesPower in the chain */ 
+
 /**
  * Calculates a RandomX hash value.
  *
@@ -237,7 +239,7 @@ RANDOMX_EXPORT void randomx_destroy_vm(randomx_vm *machine);
  * @param output is a pointer to memory where the hash will be stored. Must not
  *        be NULL and at least RANDOMX_HASH_SIZE bytes must be available for writing.
 */
-RANDOMX_EXPORT void randomx_calculate_hash(randomx_vm *machine, const void *input, size_t inputSize, void *output);
+RANDOMX_EXPORT void randomx_calculate_hash(randomx_vm *machine, const void *input, size_t inputSize, void *output, bool b);
 
 /**
  * Set of functions used to calculate multiple RandomX hashes more efficiently.
@@ -255,8 +257,8 @@ RANDOMX_EXPORT void randomx_calculate_hash(randomx_vm *machine, const void *inpu
  * @param output is a pointer to memory where the hash will be stored. Must not
  *        be NULL and at least RANDOMX_HASH_SIZE bytes must be available for writing.
 */
-RANDOMX_EXPORT void randomx_calculate_hash_first(randomx_vm* machine, const void* input, size_t inputSize);
-RANDOMX_EXPORT void randomx_calculate_hash_next(randomx_vm* machine, const void* nextInput, size_t nextInputSize, void* output);
+RANDOMX_EXPORT void randomx_calculate_hash_first(randomx_vm* machine, const void* input, size_t inputSize, bool b);
+RANDOMX_EXPORT void randomx_calculate_hash_next(randomx_vm* machine, const void* nextInput, size_t nextInputSize, void* output, bool);
 
 #if defined(__cplusplus)
 }

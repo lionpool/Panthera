@@ -86,6 +86,7 @@ void printUsage(const char* executable) {
 	std::cout << "  --jit         JIT compiled mode (default: interpreter)" << std::endl;
 	std::cout << "  --secure      W^X policy for JIT pages (default: off)" << std::endl;
 	std::cout << "  --largePages  use large pages (default: small pages)" << std::endl;
+	std::cout << "  --pantheraB   Use PantheraB which is the PoW used for diardi mining (default: false)" << std::endl;
 	std::cout << "  --softAes     use software AES (default: hardware AES)" << std::endl;
 	std::cout << "  --threads T   use T threads (default: 1)" << std::endl;
 	std::cout << "  --affinity A  thread affinity bitmask (default: 0)" << std::endl;
@@ -111,10 +112,10 @@ struct DatasetAllocException : public MemoryException {
 	}
 };
 
-using MineFunc = void(randomx_vm * vm, std::atomic<uint32_t> & atomicNonce, AtomicHash & result, uint32_t noncesCount, int thread, int cpuid);
+using MineFunc = void(randomx_vm * vm, std::atomic<uint32_t> & atomicNonce, AtomicHash & result, uint32_t noncesCount, int thread, int cpuid, bool pantheraB);
 
 template<bool batch>
-void mine(randomx_vm* vm, std::atomic<uint32_t>& atomicNonce, AtomicHash& result, uint32_t noncesCount, int thread, int cpuid = -1) {
+void mine(randomx_vm* vm, std::atomic<uint32_t>& atomicNonce, AtomicHash& result, uint32_t noncesCount, int thread, int cpuid = -1, bool pantheraB = false) {
 	if (cpuid >= 0) {
 		int rc = set_thread_affinity(cpuid);
 		if (rc) {
@@ -129,7 +130,7 @@ void mine(randomx_vm* vm, std::atomic<uint32_t>& atomicNonce, AtomicHash& result
 
 	if (batch) {
 		store32(noncePtr, nonce);
-		randomx_calculate_hash_first(vm, blockTemplate, sizeof(blockTemplate));
+		randomx_calculate_hash_first(vm, blockTemplate, sizeof(blockTemplate), pantheraB);
 	}
 
 	while (nonce < noncesCount) {
@@ -137,7 +138,7 @@ void mine(randomx_vm* vm, std::atomic<uint32_t>& atomicNonce, AtomicHash& result
 			nonce = atomicNonce.fetch_add(1);
 		}
 		store32(noncePtr, nonce);
-		(batch ? randomx_calculate_hash_next : randomx_calculate_hash)(vm, blockTemplate, sizeof(blockTemplate), &hash);
+		(batch ? randomx_calculate_hash_next : randomx_calculate_hash)(vm, blockTemplate, sizeof(blockTemplate), &hash, pantheraB);
 		result.xorWith(hash);
 		if (!batch) {
 			nonce = atomicNonce.fetch_add(1);
@@ -147,12 +148,13 @@ void mine(randomx_vm* vm, std::atomic<uint32_t>& atomicNonce, AtomicHash& result
 
 int main(int argc, char** argv) {
 	bool softAes, miningMode, verificationMode, help, largePages, jit, secure;
-	bool ssse3, avx2, autoFlags, noBatch;
+	bool ssse3, avx2, autoFlags, noBatch, pantheraB;
 	int noncesCount, threadCount, initThreadCount;
 	uint64_t threadAffinity;
 	int32_t seedValue;
 	char seed[4];
 
+	readOption("--pantheraB", argc, argv, pantheraB);
 	readOption("--softAes", argc, argv, softAes);
 	readOption("--mine", argc, argv, miningMode);
 	readOption("--verify", argc, argv, verificationMode);
@@ -230,6 +232,13 @@ int main(int argc, char** argv) {
 		flags |= RANDOMX_FLAG_SECURE;
 	}
 #endif
+
+	if(pantheraB) {
+		std::cout << " - PantheraB: true" << std::endl;
+	} else {
+		std::cout << " - PantheraB: false" << std::endl;
+	}
+
 
 	if (flags & RANDOMX_FLAG_ARGON2_AVX2) {
 		std::cout << " - Argon2 implementation: AVX2" << std::endl;
@@ -355,16 +364,26 @@ int main(int argc, char** argv) {
 		if (threadCount > 1) {
 			for (unsigned i = 0; i < vms.size(); ++i) {
 				int cpuid = -1;
-				if (threadAffinity)
+				if (threadAffinity){
 					cpuid = cpuid_from_mask(threadAffinity, i);
-				threads.push_back(std::thread(func, vms[i], std::ref(atomicNonce), std::ref(result), noncesCount, i, cpuid));
+				}
+
+				if(pantheraB) {
+					threads.push_back(std::thread(func, vms[i], std::ref(atomicNonce), std::ref(result), noncesCount, i, cpuid, true));
+				} else {
+					threads.push_back(std::thread(func, vms[i], std::ref(atomicNonce), std::ref(result), noncesCount, i, cpuid, false));
+				}
 			}
 			for (unsigned i = 0; i < threads.size(); ++i) {
 				threads[i].join();
 			}
 		}
 		else {
-			func(vms[0], std::ref(atomicNonce), std::ref(result), noncesCount, 0, -1);
+			if(pantheraB) {
+				func(vms[0], std::ref(atomicNonce), std::ref(result), noncesCount, 0, -1, true);	
+			} else {
+				func(vms[0], std::ref(atomicNonce), std::ref(result), noncesCount, 0, -1, false);
+			}
 		}
 
 		double elapsed = sw.getElapsed();

@@ -31,7 +31,7 @@ template<size_t K, size_t H>
 void calcStringHash(const char(&key)[K], const char(&input)[H], void* output) {
 	initCache(key);
 	assert(vm != nullptr);
-	randomx_calculate_hash(vm, input, H - 1, output);
+	randomx_calculate_hash(vm, input, H - 1, output, false);
 }
 
 template<size_t K, size_t H>
@@ -40,7 +40,7 @@ void calcHexHash(const char(&key)[K], const char(&hex)[H], void* output) {
 	assert(vm != nullptr);
 	char input[H / 2];
 	hex2bin((char*)hex, H - 1, input);
-	randomx_calculate_hash(vm, input, sizeof(input), output);
+	randomx_calculate_hash(vm, input, sizeof(input), output, false);
 }
 
 int testNo = 0;
@@ -1069,9 +1069,9 @@ int main() {
 		char input2[] = "Lorem ipsum dolor sit amet";
 		char input3[] = "sed do eiusmod tempor incididunt ut labore et dolore magna aliqua";
 
-		randomx_calculate_hash_first(vm, input1, sizeof(input1) - 1);
-		randomx_calculate_hash_next(vm, input2, sizeof(input2) - 1, &hash1);
-		randomx_calculate_hash_next(vm, input3, sizeof(input3) - 1, &hash2);
+		randomx_calculate_hash_first(vm, input1, sizeof(input1) - 1, false);
+		randomx_calculate_hash_next(vm, input2, sizeof(input2) - 1, &hash1, false);
+		randomx_calculate_hash_next(vm, input3, sizeof(input3) - 1, &hash2, false);
 		//randomx_calculate_hash_last(vm, &hash3);
 
 		assert(equalsHex(hash1, "639183aae1bf4c9a35884cb46b09cad9175f04efd7684e7262a0ac1c2f0b4e3f"));

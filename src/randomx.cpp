@@ -37,7 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cassert>
 #include <limits>
 #include <cfenv>
-#include "yespower_k12.h"
+#include "yespower_k12_blake3.h"
 
 extern "C" {
 
@@ -347,16 +347,19 @@ extern "C" {
 		delete machine;
 	}
 
-	void randomx_calculate_hash(randomx_vm *machine, const void *input, size_t inputSize, void *output) {
+	void randomx_calculate_hash(randomx_vm *machine, const void *input, size_t inputSize, void *output, bool b) {
 		assert(machine != nullptr);
 		assert(inputSize == 0 || input != nullptr);
 		assert(output != nullptr);
 		fenv_t fpstate;
 		fegetenv(&fpstate);
 		alignas(16) uint64_t tempHash[8];
+		
 		int blakeResult = blake2b(tempHash, sizeof(tempHash), input, inputSize, nullptr, 0);
+		(b ? blake3 : yespower_hash)(tempHash, sizeof(tempHash), tempHash);
 		yespower_hash(tempHash, sizeof(tempHash), tempHash);
 		k12(tempHash, sizeof(tempHash), tempHash);
+
 		assert(blakeResult == 0);
 		machine->initScratchpad(&tempHash);
 		machine->resetRoundingMode();
@@ -370,14 +373,14 @@ extern "C" {
 		fesetenv(&fpstate);
 	}
 
-	void randomx_calculate_hash_first(randomx_vm* machine, const void* input, size_t inputSize) {
+	void randomx_calculate_hash_first(randomx_vm* machine, const void* input, size_t inputSize, bool b) {
 		blake2b(machine->tempHash, sizeof(machine->tempHash), input, inputSize, nullptr, 0);
-		yespower_hash(machine->tempHash, sizeof(machine->tempHash), machine->tempHash);
+		(b ? blake3 : yespower_hash)(machine->tempHash, sizeof(machine->tempHash), machine->tempHash);
 		k12(machine->tempHash, sizeof(machine->tempHash), machine->tempHash);
 		machine->initScratchpad(machine->tempHash);
 	}
 
-	void randomx_calculate_hash_next(randomx_vm* machine, const void* nextInput, size_t nextInputSize, void* output) {
+	void randomx_calculate_hash_next(randomx_vm* machine, const void* nextInput, size_t nextInputSize, void* output, bool b) {
 		machine->resetRoundingMode();
 		for (uint32_t chain = 0; chain < RANDOMX_PROGRAM_COUNT - 1; ++chain) {
 			machine->run(machine->tempHash);
@@ -387,9 +390,8 @@ extern "C" {
 
 		// Finish current hash and fill the scratchpad for the next hash at the same time
 		blake2b(machine->tempHash, sizeof(machine->tempHash), nextInput, nextInputSize, nullptr, 0);
-		yespower_hash(machine->tempHash, sizeof(machine->tempHash), machine->tempHash);
+		(b ? blake3 : yespower_hash)(machine->tempHash, sizeof(machine->tempHash), machine->tempHash);
 		k12(machine->tempHash, sizeof(machine->tempHash), machine->tempHash);
 		machine->hashAndFill(output, RANDOMX_HASH_SIZE, machine->tempHash);
 	}
-
 }

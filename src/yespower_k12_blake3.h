@@ -1,9 +1,8 @@
 /*
 Copyright (c) 2018-2019, tevador <tevador@gmail.com>
-Copyright (c) 2019-2020, The Scala Project <hello@scalaproject.io>
+Copyright (c) 2019-2020, Scala Project <hello@scalaproject.io>
 
 All rights reserved.
-
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 	* Redistributions of source code must retain the above copyright
@@ -14,7 +13,6 @@ modification, are permitted provided that the following conditions are met:
 	* Neither the name of the copyright holder nor the
 	  names of its contributors may be used to endorse or promote products
 	  derived from this software without specific prior written permission.
-
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,32 +31,26 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * Daniel Dinu, Dmitry Khovratovich, Jean-Philippe Aumasson, and Samuel Neves
 */
 
+
+#ifndef YESPOWER_K12_BLAKE3_H
+#define YESPOWER_K12_BLAKE3_H
+
 #include <stdint.h>
-#include <string.h>
-#include <stdio.h>
+#include <limits.h>
 
-#include "yespower/yespower.h"
-#include "k12/KangarooTwelve.h"
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
-/* Yespower */
-int yespower_hash(const void *data, size_t length, void *hash)
-{
-		yespower_params_t params = {
-		.version = YESPOWER_1_0,
-		.N = 2048,
-		.r = 8,
-		.pers = NULL
-		};
+	/* KangarooTwelve */
+	int k12(const void *data, size_t length, void *hash);
+	/* Yespower */
+	int yespower_hash(const void *data, size_t length, void *hash);
+	/* Blake3 */
+	int blake3(const void *data, size_t length, void *hash);
 
-		int finale_yespower = yespower_tls((const uint8_t *)data, length, &params, (yespower_binary_t *)hash);
-		return finale_yespower; //0 for success
+#if defined(__cplusplus)
 }
+#endif
 
-/* KangarooTwelve */
-int k12(const void *data, size_t length, void *hash)
-{
-
-  int kDo = KangarooTwelve((const unsigned char *)data, length, (unsigned char *)hash, 32, 0, 0);
-  return kDo;
-}
-
+#endif

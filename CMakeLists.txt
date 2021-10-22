@@ -31,7 +31,7 @@ cmake_minimum_required(VERSION 2.8.7)
 project(RandomX)
 
 set(randomx_sources
-src/yespower_k12.c
+src/yespower_k12_blake3.c
 src/aes_hash.cpp
 src/argon2_ref.c
 src/argon2_ssse3.c
@@ -55,6 +55,9 @@ src/instructions_portable.cpp
 src/reciprocal.c
 src/virtual_machine.cpp
 src/vm_compiled_light.cpp
+src/blake3/blake3.c
+src/blake3/blake3_dispatch.c
+src/blake3/blake3_portable.c
 src/blake2/blake2b.c
 src/yespower/sha256.c
 src/k12/KangarooTwelve.c
@@ -91,13 +94,13 @@ function(add_flag flag)
   check_cxx_compiler_flag(${flag} ${supported_cxx})
   if(${${supported_cxx}})
     message(STATUS "Setting CXX flag ${flag}")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}" PARENT_SCOPE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag} -DBLAKE3_NO_SSE2 -DBLAKE3_NO_SSE41 -DBLAKE3_NO_AVX2 -DBLAKE3_NO_AVX512" PARENT_SCOPE)
   endif()
   string(REPLACE "-" "_" supported_c ${flag}_c)
   check_c_compiler_flag(${flag} ${supported_c})
   if(${${supported_c}})
     message(STATUS "Setting C flag ${flag}")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${flag}" PARENT_SCOPE)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${flag} -DBLAKE3_NO_SSE2 -DBLAKE3_NO_SSE41 -DBLAKE3_NO_AVX2 -DBLAKE3_NO_AVX512" PARENT_SCOPE)
   endif()
 endfunction()
 
