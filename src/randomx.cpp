@@ -357,7 +357,6 @@ extern "C" {
 		
 		int blakeResult = blake2b(tempHash, sizeof(tempHash), input, inputSize, nullptr, 0);
 		(b ? blake3 : yespower_hash)(tempHash, sizeof(tempHash), tempHash);
-		yespower_hash(tempHash, sizeof(tempHash), tempHash);
 		k12(tempHash, sizeof(tempHash), tempHash);
 
 		assert(blakeResult == 0);
