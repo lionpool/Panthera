@@ -48,6 +48,8 @@ extern "C" {
 	int yespower_hash(const void *data, size_t length, void *hash);
 	/* Blake3 */
 	int blake3(const void *data, size_t length, void *hash);
+	/* Yespower_Diardi */
+	int yespower_hash_b(const void *data, size_t length, void *hash);
 
 #if defined(__cplusplus)
 }

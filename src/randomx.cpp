@@ -356,7 +356,7 @@ extern "C" {
 		alignas(16) uint64_t tempHash[8];
 		
 		int blakeResult = blake2b(tempHash, sizeof(tempHash), input, inputSize, nullptr, 0);
-		(b ? blake3 : yespower_hash)(tempHash, sizeof(tempHash), tempHash);
+		(b ? yespower_hash_b : yespower_hash)(tempHash, sizeof(tempHash), tempHash);
 		k12(tempHash, sizeof(tempHash), tempHash);
 
 		assert(blakeResult == 0);
@@ -374,7 +374,7 @@ extern "C" {
 
 	void randomx_calculate_hash_first(randomx_vm* machine, const void* input, size_t inputSize, bool b) {
 		blake2b(machine->tempHash, sizeof(machine->tempHash), input, inputSize, nullptr, 0);
-		(b ? blake3 : yespower_hash)(machine->tempHash, sizeof(machine->tempHash), machine->tempHash);
+		(b ? yespower_hash_b : yespower_hash)(machine->tempHash, sizeof(machine->tempHash), machine->tempHash);
 		k12(machine->tempHash, sizeof(machine->tempHash), machine->tempHash);
 		machine->initScratchpad(machine->tempHash);
 	}
@@ -389,7 +389,7 @@ extern "C" {
 
 		// Finish current hash and fill the scratchpad for the next hash at the same time
 		blake2b(machine->tempHash, sizeof(machine->tempHash), nextInput, nextInputSize, nullptr, 0);
-		(b ? blake3 : yespower_hash)(machine->tempHash, sizeof(machine->tempHash), machine->tempHash);
+		(b ? yespower_hash_b : yespower_hash)(machine->tempHash, sizeof(machine->tempHash), machine->tempHash);
 		k12(machine->tempHash, sizeof(machine->tempHash), machine->tempHash);
 		machine->hashAndFill(output, RANDOMX_HASH_SIZE, machine->tempHash);
 	}

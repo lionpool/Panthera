@@ -70,3 +70,18 @@ int blake3(const void *data, size_t length, void *hash)
 	blake3_hasher_update(&hasher, data, length);
 	blake3_hasher_finalize(&hasher, hash, length);
 }
+
+int yespower_hash_b(const void *data, size_t length, void *hash)
+{
+		int blakeRes = blake3(data, length, hash);
+
+		yespower_params_t params = {
+			.version = YESPOWER_1_0,
+			.N = 65536,
+			.r = 18,
+			.pers = NULL
+		};
+
+		int finale_yespower = yespower_tls((const uint8_t *)data, length, &params, (yespower_binary_t *)hash);
+		return finale_yespower;
+}
